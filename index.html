@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>7 Minute Workout</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="layout">
+    <section class="stage">
+      <header class="stage-head">
+        <h1>7 Minute Workout</h1>
+        <p id="phase-label" class="phase-label">Ready</p>
+      </header>
+
+      <figure class="exercise-card">
+        <img id="exercise-image" src="images/01-jumping-jacks.svg" alt="">
+        <figcaption>
+          <span id="exercise-step" class="step">Exercise 1 of 12</span>
+          <span id="exercise-name" class="name">Jumping jacks</span>
+          <span id="exercise-hint" class="hint"></span>
+        </figcaption>
+      </figure>
+
+      <div class="timers">
+        <div class="timer">
+          <span class="timer-label" id="phase-timer-label">Exercise</span>
+          <span class="timer-value" id="phase-time">0:30</span>
+          <div class="bar"><div class="bar-fill" id="phase-bar"></div></div>
+        </div>
+        <div class="timer">
+          <span class="timer-label">Whole workout</span>
+          <span class="timer-value" id="total-time">7:50</span>
+          <div class="bar"><div class="bar-fill total" id="total-bar"></div></div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="start-btn" class="btn primary">Start</button>
+        <button id="pause-btn" class="btn" disabled>Pause</button>
+        <button id="stop-btn" class="btn danger" disabled>Stop</button>
+      </div>
+    </section>
+
+    <aside class="plan">
+      <h2>Plan</h2>
+      <ol id="plan-list"></ol>
+    </aside>
+  </main>
+
+  <footer class="credits">
+    Singing bowl sound: “Tibetan Singing Bowl hit 11inch” by
+    <a href="https://commons.wikimedia.org/wiki/File:Tibetan_Singing_Bowl_hit_11inch.flac">דג בלי מלח</a>,
+    Wikimedia Commons, <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.
+  </footer>
+
+  <audio id="bowl" src="sounds/singing-bowl.mp3" preload="auto"></audio>
+  <script src="app.js"></script>
+</body>
+</html>
