@@ -85,9 +85,27 @@ function locate(elapsedSeconds) {
   return { phaseIndex: PHASES.length, intoPhase: 0 };
 }
 
+// The recording rings for over 20 s; play only the strike and fade it out.
+const BOWL_HOLD_MS = 1000;
+const BOWL_FADE_MS = 2000;
+let bowlFadeHandle = null;
+
+function stopBowl() {
+  clearInterval(bowlFadeHandle);
+  els.bowl.pause();
+  els.bowl.volume = 1;
+}
+
 function ringBowl() {
+  stopBowl();
   els.bowl.currentTime = 0;
   els.bowl.play().catch(() => {});
+  const startedAt = Date.now();
+  bowlFadeHandle = setInterval(() => {
+    const fade = (Date.now() - startedAt - BOWL_HOLD_MS) / BOWL_FADE_MS;
+    if (fade >= 1) stopBowl();
+    else if (fade > 0) els.bowl.volume = 1 - fade;
+  }, 50);
 }
 
 function showExercise(index, type) {
@@ -190,7 +208,7 @@ function reset() {
   state = "idle";
   elapsedBefore = 0;
   lastPhaseIndex = -1;
-  els.bowl.pause();
+  stopBowl();
   setButtons();
   render();
 }

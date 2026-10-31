@@ -15,8 +15,8 @@ Open `index.html` in a browser. No build step or server is needed.
 
 ## Credits
 
-Singing bowl sound: "Tibetan Singing Bowl hit 11inch" by דג בלי מלח,
-[Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Tibetan_Singing_Bowl_hit_11inch.flac),
+Singing bowl sound: "Tibetan Singing Bowl hit 4.5inch" by דג בלי מלח,
+[Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Tibetan_Singing_Bowl_hit_4.5inch.flac),
 licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
 `sounds/singing-bowl.mp3` is Wikimedia's MP3 copy of that file.
 
