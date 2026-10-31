@@ -121,6 +121,78 @@ function stopWhistle() {
   els.whistle.pause();
 }
 
+// Confetti rain for the "Well done!" screen.
+const CONFETTI_COLORS = ["#e07b39", "#4f9d8c", "#f2c14e", "#5b8def", "#d65db1", "#8a6cf0"];
+const CONFETTI_RAIN_MS = 6000;
+const confettiCanvas = $("confetti");
+const confettiCtx = confettiCanvas.getContext("2d");
+let confettiPieces = [];
+let confettiFrame = null;
+let confettiStartedAt = 0;
+
+function newConfettiPiece(width, aboveTop) {
+  return {
+    x: Math.random() * width,
+    y: aboveTop ? -20 - Math.random() * 40 : Math.random() * -window.innerHeight,
+    w: 6 + Math.random() * 6,
+    h: 8 + Math.random() * 8,
+    color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+    speed: 1.5 + Math.random() * 2.5,
+    sway: Math.random() * Math.PI * 2,
+    swaySpeed: 0.02 + Math.random() * 0.04,
+    angle: Math.random() * Math.PI,
+    spin: (Math.random() - 0.5) * 0.2,
+  };
+}
+
+function startConfetti() {
+  stopConfetti();
+  const ratio = window.devicePixelRatio || 1;
+  confettiCanvas.width = window.innerWidth * ratio;
+  confettiCanvas.height = window.innerHeight * ratio;
+  confettiCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  confettiPieces = Array.from({ length: 150 }, () => newConfettiPiece(window.innerWidth, false));
+  confettiStartedAt = Date.now();
+  confettiFrame = requestAnimationFrame(drawConfetti);
+}
+
+function drawConfetti() {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  const raining = Date.now() - confettiStartedAt < CONFETTI_RAIN_MS;
+  confettiCtx.clearRect(0, 0, width, height);
+
+  confettiPieces = confettiPieces.filter((p) => {
+    p.y += p.speed;
+    p.sway += p.swaySpeed;
+    p.x += Math.sin(p.sway) * 1.2;
+    p.angle += p.spin;
+    if (p.y > height + 20) {
+      // While it is still raining, recycle the piece back to the top.
+      if (!raining) return false;
+      Object.assign(p, newConfettiPiece(width, true));
+    }
+    confettiCtx.save();
+    confettiCtx.translate(p.x, p.y);
+    confettiCtx.rotate(p.angle);
+    // Squash the width with the sway so pieces look like they flutter.
+    confettiCtx.scale(Math.cos(p.sway * 2), 1);
+    confettiCtx.fillStyle = p.color;
+    confettiCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+    confettiCtx.restore();
+    return true;
+  });
+
+  confettiFrame = confettiPieces.length ? requestAnimationFrame(drawConfetti) : null;
+}
+
+function stopConfetti() {
+  cancelAnimationFrame(confettiFrame);
+  confettiFrame = null;
+  confettiPieces = [];
+  confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+}
+
 // Browsers only allow audio that was first started from a click,
 // so play each sound silently once when Start is pressed.
 function unlockAudio(audio) {
@@ -231,6 +303,7 @@ function reset() {
   lastPhaseIndex = -1;
   stopBowl();
   stopWhistle();
+  stopConfetti();
   setButtons();
   render();
 }
@@ -248,7 +321,9 @@ function finish() {
   els.phaseTime.textContent = "0:00";
   els.phaseBar.style.width = "100%";
   els.totalTime.textContent = "0:00";
+  els.totalBar.style.width = "100%";
   setButtons();
+  startConfetti();
 }
 
 els.start.addEventListener("click", start);
