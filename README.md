@@ -5,7 +5,7 @@ A small web page that runs the standard 7 minute workout: 12 exercises of
 
 - Shows the current exercise with a picture and a short form hint
 - Separate countdowns for the current exercise/rest and the whole workout
-- Three claps when each exercise starts, a short Tibetan singing bowl when it ends
+- A referee whistle when each exercise starts, a short Tibetan singing bowl when it ends
 - Plan list on the side that ticks off each finished exercise
 - Start, Pause/Resume and Stop buttons
 
@@ -20,9 +20,8 @@ Singing bowl sound: "Tibetan Singing Bowl hit 4.5inch" by דג בלי מלח,
 licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
 `sounds/singing-bowl.mp3` is Wikimedia's MP3 copy of that file.
 
-Clap sound: "Clap, Single, 15.wav" by InspectorJ,
-[Freesound](https://freesound.org/people/InspectorJ/sounds/404544/),
-licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
-`sounds/clap.mp3` is Freesound's MP3 preview of that file.
+Whistle sound: "Referee whistle blow, gymnasium" by SpliceSound,
+[Wikimedia Commons](https://commons.wikimedia.org/wiki/File:218318_splicesound_referee-whistle-blow-gymnasium.wav),
+public domain (CC0). `sounds/whistle.mp3` is Wikimedia's MP3 copy of that file.
 
 Exercise illustrations in `images/` were made for this project.

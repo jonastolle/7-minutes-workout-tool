@@ -45,7 +45,7 @@ const els = {
   stop: $("stop-btn"),
   plan: $("plan-list"),
   bowl: $("bowl"),
-  clap: $("clap"),
+  whistle: $("whistle"),
 };
 
 // Timer state. Elapsed time is measured against the clock, so the
@@ -109,29 +109,15 @@ function ringBowl() {
   }, 50);
 }
 
-// Three claps mark the start of each exercise.
-const CLAP_COUNT = 3;
-const CLAP_GAP_MS = 400;
-let clapTimeouts = [];
-
-function stopClaps() {
-  clapTimeouts.forEach(clearTimeout);
-  clapTimeouts = [];
+// A referee whistle marks the start of each exercise. On the first
+// exercise it plays inside the Start click, which unlocks the sound.
+function blowWhistle() {
+  els.whistle.currentTime = 0;
+  els.whistle.play().catch(() => {});
 }
 
-function clap() {
-  els.clap.currentTime = 0;
-  els.clap.play().catch(() => {});
-}
-
-// The first clap plays right away, so on the very first exercise it
-// runs inside the Start click and that unlocks the clap sound.
-function clapThreeTimes() {
-  stopClaps();
-  clap();
-  for (let i = 1; i < CLAP_COUNT; i++) {
-    clapTimeouts.push(setTimeout(clap, i * CLAP_GAP_MS));
-  }
+function stopWhistle() {
+  els.whistle.pause();
 }
 
 // Browsers only allow audio that was first started from a click,
@@ -171,7 +157,7 @@ function render() {
     for (let i = Math.max(lastPhaseIndex, 0); i < phaseIndex; i++) {
       if (PHASES[i].type === "work") { ringBowl(); break; }
     }
-    if (PHASES[phaseIndex]?.type === "work") clapThreeTimes();
+    if (PHASES[phaseIndex]?.type === "work") blowWhistle();
   }
   if (state === "running") lastPhaseIndex = phaseIndex;
 
@@ -243,7 +229,7 @@ function reset() {
   elapsedBefore = 0;
   lastPhaseIndex = -1;
   stopBowl();
-  stopClaps();
+  stopWhistle();
   setButtons();
   render();
 }
