@@ -86,9 +86,10 @@ function locate(elapsedSeconds) {
   return { phaseIndex: PHASES.length, intoPhase: 0 };
 }
 
-// The recording rings for over 20 s; play only the strike and fade it out.
-const BOWL_HOLD_MS = 1000;
-const BOWL_FADE_MS = 2000;
+// The recording rings for over 20 s; let it ring through most of the
+// 10 s rest and fade it out just before the next exercise starts.
+const BOWL_HOLD_MS = 3000;
+const BOWL_FADE_MS = 6000;
 let bowlFadeHandle = null;
 
 function stopBowl() {
