@@ -24,4 +24,6 @@ Whistle sound: "Referee whistle blow, gymnasium" by SpliceSound,
 [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:218318_splicesound_referee-whistle-blow-gymnasium.wav),
 public domain (CC0). `sounds/whistle.mp3` is Wikimedia's MP3 copy of that file.
 
+Created by [Jonas Tölle](https://github.com/jonastolle).
+
 Exercise illustrations in `images/` were made for this project.
