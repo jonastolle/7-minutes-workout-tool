@@ -45,6 +45,7 @@ const els = {
   stop: $("stop-btn"),
   plan: $("plan-list"),
   bowl: $("bowl"),
+  clap: $("clap"),
 };
 
 // Timer state. Elapsed time is measured against the clock, so the
@@ -108,6 +109,40 @@ function ringBowl() {
   }, 50);
 }
 
+// Three claps mark the start of each exercise.
+const CLAP_COUNT = 3;
+const CLAP_GAP_MS = 400;
+let clapTimeouts = [];
+
+function stopClaps() {
+  clapTimeouts.forEach(clearTimeout);
+  clapTimeouts = [];
+}
+
+function clap() {
+  els.clap.currentTime = 0;
+  els.clap.play().catch(() => {});
+}
+
+// The first clap plays right away, so on the very first exercise it
+// runs inside the Start click and that unlocks the clap sound.
+function clapThreeTimes() {
+  stopClaps();
+  clap();
+  for (let i = 1; i < CLAP_COUNT; i++) {
+    clapTimeouts.push(setTimeout(clap, i * CLAP_GAP_MS));
+  }
+}
+
+// Browsers only allow audio that was first started from a click,
+// so play each sound silently once when Start is pressed.
+function unlockAudio(audio) {
+  audio.muted = true;
+  audio.play()
+    .then(() => { audio.pause(); audio.muted = false; })
+    .catch(() => { audio.muted = false; });
+}
+
 function showExercise(index, type) {
   const exercise = EXERCISES[index];
   els.image.src = `images/${exercise.image}`;
@@ -136,8 +171,9 @@ function render() {
     for (let i = Math.max(lastPhaseIndex, 0); i < phaseIndex; i++) {
       if (PHASES[i].type === "work") { ringBowl(); break; }
     }
+    if (PHASES[phaseIndex]?.type === "work") clapThreeTimes();
   }
-  lastPhaseIndex = phaseIndex;
+  if (state === "running") lastPhaseIndex = phaseIndex;
 
   els.totalTime.textContent = formatTime(TOTAL_SECONDS - elapsed);
   els.totalBar.style.width = `${Math.min(100, (elapsed / TOTAL_SECONDS) * 100)}%`;
@@ -179,9 +215,7 @@ function setButtons() {
 
 function start() {
   if (state === "finished") reset();
-  // Prime the audio from this click so browsers allow it to play later.
-  els.bowl.muted = true;
-  els.bowl.play().then(() => { els.bowl.pause(); els.bowl.muted = false; }).catch(() => { els.bowl.muted = false; });
+  unlockAudio(els.bowl);
   state = "running";
   runStartedAt = Date.now();
   tickHandle = setInterval(render, 200);
@@ -209,6 +243,7 @@ function reset() {
   elapsedBefore = 0;
   lastPhaseIndex = -1;
   stopBowl();
+  stopClaps();
   setButtons();
   render();
 }
