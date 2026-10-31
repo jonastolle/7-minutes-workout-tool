@@ -46,6 +46,7 @@ const els = {
   plan: $("plan-list"),
   bowl: $("bowl"),
   whistle: $("whistle"),
+  march: $("march"),
 };
 
 // Timer state. Elapsed time is measured against the clock, so the
@@ -90,6 +91,9 @@ function locate(elapsedSeconds) {
 // 10 s rest and fade it out just before the next exercise starts.
 const BOWL_HOLD_MS = 3000;
 const BOWL_FADE_MS = 6000;
+// After the last exercise the bowl is kept short, then the march plays.
+const FINAL_BOWL_HOLD_MS = 1500;
+const FINAL_BOWL_FADE_MS = 1500;
 let bowlFadeHandle = null;
 
 function stopBowl() {
@@ -98,13 +102,13 @@ function stopBowl() {
   els.bowl.volume = 1;
 }
 
-function ringBowl() {
+function ringBowl(holdMs = BOWL_HOLD_MS, fadeMs = BOWL_FADE_MS) {
   stopBowl();
   els.bowl.currentTime = 0;
   els.bowl.play().catch(() => {});
   const startedAt = Date.now();
   bowlFadeHandle = setInterval(() => {
-    const fade = (Date.now() - startedAt - BOWL_HOLD_MS) / BOWL_FADE_MS;
+    const fade = (Date.now() - startedAt - holdMs) / fadeMs;
     if (fade >= 1) stopBowl();
     else if (fade > 0) els.bowl.volume = 1 - fade;
   }, 50);
@@ -119,6 +123,23 @@ function blowWhistle() {
 
 function stopWhistle() {
   els.whistle.pause();
+}
+
+// A short march celebrates the finished workout once the last bowl
+// has faded. The sample already fades out at its end.
+let marchTimeout = null;
+
+function playMarchAfterBowl() {
+  stopMarch();
+  marchTimeout = setTimeout(() => {
+    els.march.currentTime = 0;
+    els.march.play().catch(() => {});
+  }, FINAL_BOWL_HOLD_MS + FINAL_BOWL_FADE_MS);
+}
+
+function stopMarch() {
+  clearTimeout(marchTimeout);
+  els.march.pause();
 }
 
 // Confetti rain for the "Well done!" screen.
@@ -228,7 +249,10 @@ function render() {
   // that were skipped over while the tab was in the background.
   if (state === "running" && phaseIndex > lastPhaseIndex) {
     for (let i = Math.max(lastPhaseIndex, 0); i < phaseIndex; i++) {
-      if (PHASES[i].type === "work") { ringBowl(); break; }
+      if (PHASES[i].type !== "work") continue;
+      if (phaseIndex >= PHASES.length) ringBowl(FINAL_BOWL_HOLD_MS, FINAL_BOWL_FADE_MS);
+      else ringBowl();
+      break;
     }
     if (PHASES[phaseIndex]?.type === "work") blowWhistle();
   }
@@ -275,6 +299,7 @@ function setButtons() {
 function start() {
   if (state === "finished") reset();
   unlockAudio(els.bowl);
+  unlockAudio(els.march);
   state = "running";
   runStartedAt = Date.now();
   tickHandle = setInterval(render, 200);
@@ -303,6 +328,7 @@ function reset() {
   lastPhaseIndex = -1;
   stopBowl();
   stopWhistle();
+  stopMarch();
   stopConfetti();
   setButtons();
   render();
@@ -324,6 +350,7 @@ function finish() {
   els.totalBar.style.width = "100%";
   setButtons();
   startConfetti();
+  playMarchAfterBowl();
 }
 
 els.start.addEventListener("click", start);

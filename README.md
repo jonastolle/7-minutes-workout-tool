@@ -6,6 +6,7 @@ A small web page that runs the standard 7 minute workout: 12 exercises of
 - Shows the current exercise with a picture and a short form hint
 - Separate countdowns for the current exercise/rest and the whole workout
 - A referee whistle when each exercise starts, a short Tibetan singing bowl when it ends
+- A short marching band fanfare and confetti when the workout is done
 - Plan list on the side that ticks off each finished exercise
 - Start, Pause/Resume and Stop buttons
 
@@ -30,6 +31,12 @@ licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
 Whistle sound: "Referee whistle blow, gymnasium" by SpliceSound,
 [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:218318_splicesound_referee-whistle-blow-gymnasium.wav),
 public domain (CC0). `sounds/whistle.mp3` is Wikimedia's MP3 copy of that file.
+
+Celebration march: Sousa's "The Stars and Stripes Forever" performed by the
+United States Marine Band (2017),
+[Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Sousa%27s_%22The_Stars_and_Stripes_Forever%22_-_United_States_Marine_Band_(2017).mp3),
+public domain (work of the US federal government). `sounds/march.m4a` is the
+first 13 seconds of that recording with a fade-out added.
 
 Created by [Jonas Tölle](https://github.com/jonastolle).
 
