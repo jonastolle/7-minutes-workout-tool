@@ -26,4 +26,8 @@ public domain (CC0). `sounds/whistle.mp3` is Wikimedia's MP3 copy of that file.
 
 Created by [Jonas Tölle](https://github.com/jonastolle).
 
-Exercise illustrations in `images/` were made for this project.
+## License
+
+- **Code** (HTML, CSS, JavaScript): [MIT License](LICENSE), © 2026 Jonas Tölle.
+- **Exercise illustrations** in `images/`: [CC BY 4.0](images/LICENSE.md), © 2026 Jonas Tölle.
+- **Sounds** in `sounds/`: their original licenses, listed under Credits above.
