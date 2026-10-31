@@ -9,6 +9,13 @@ A small web page that runs the standard 7 minute workout: 12 exercises of
 - Plan list on the side that ticks off each finished exercise
 - Start, Pause/Resume and Stop buttons
 
+## About the workout
+
+The 7 minute workout was described by Brett Klika and Chris Jordan:
+
+- Klika, B. & Jordan, C. (2013). [High-intensity circuit training using body weight: maximum results with minimal investment](https://doi.org/10.1249/FIT.0b013e31828cb1e8). *ACSM's Health & Fitness Journal*, 17(3), 8–13.
+- Reynolds, G. (2013, May 9). [The Scientific 7-Minute Workout](https://archive.nytimes.com/well.blogs.nytimes.com/2013/05/09/the-scientific-7-minute-workout/). *The New York Times*.
+
 ## Use
 
 Open `index.html` in a browser. No build step or server is needed.

@@ -189,6 +189,36 @@ h2 { margin: 0 0 12px; font-size: 1.1rem; }
   font-size: .8rem;
 }
 .credits a { color: inherit; }
+.about h3 {
+  margin: 14px 0 6px;
+  color: var(--ink);
+  font-size: .85rem;
+}
+.about p { margin: 0 0 4px; max-width: 70ch; }
+.about ul { margin: 0; padding-left: 18px; max-width: 70ch; }
+
+.license { margin-top: 12px; }
+.license summary {
+  cursor: pointer;
+  color: var(--ink);
+  font-weight: 600;
+}
+.license h3 {
+  margin: 14px 0 6px;
+  color: var(--ink);
+  font-size: .85rem;
+}
+.license p { margin: 0; max-width: 70ch; }
+.license pre {
+  margin: 0;
+  padding: 12px;
+  overflow-x: auto;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: .75rem;
+  white-space: pre-wrap;
+}
 .credits .creator {
   margin: 0 0 6px;
   color: var(--ink);
