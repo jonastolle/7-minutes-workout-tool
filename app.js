@@ -15,7 +15,7 @@ const EXERCISES = [
   { name: "High knees, running in place", image: "09-high-knees.svg", hint: "Knees up to hip height, pump your arms" },
   { name: "Lunges", image: "10-lunge.svg", hint: "Alternate legs, front knee over the ankle" },
   { name: "Push-ups with rotation", image: "11-push-up-rotation.svg", hint: "After each push-up, rotate and reach to the sky" },
-  { name: "Side plank", image: "12-side-plank.svg", hint: "Switch sides halfway through" },
+  { name: "Side plank", image: "12-side-plank.svg", hint: "Switch sides at the bing", switchAtHalf: true },
 ];
 
 // Build the timeline: work, rest, work, rest, ..., work.
@@ -47,6 +47,7 @@ const els = {
   bowl: $("bowl"),
   whistle: $("whistle"),
   march: $("march"),
+  bing: $("bing"),
 };
 
 // Timer state. Elapsed time is measured against the clock, so the
@@ -123,6 +124,15 @@ function blowWhistle() {
 
 function stopWhistle() {
   els.whistle.pause();
+}
+
+// A short bing at the halfway mark of exercises done on both sides
+// (marked `switchAtHalf`), telling you to switch sides.
+let bingPhaseIndex = -1; // phase whose halfway bing has already played
+
+function playBing() {
+  els.bing.currentTime = 0;
+  els.bing.play().catch(() => {});
 }
 
 // A short march celebrates the finished workout once the last bowl
@@ -267,9 +277,17 @@ function render() {
   }
 
   const phase = PHASES[phaseIndex];
+  const switchSides = phase.type === "work" && EXERCISES[phase.index].switchAtHalf
+    && state !== "idle" && intoPhase >= phase.seconds / 2;
+  if (switchSides && state === "running" && bingPhaseIndex !== phaseIndex) {
+    bingPhaseIndex = phaseIndex;
+    playBing();
+  }
+
   // A rest phase carries the index of the exercise that follows it,
   // so in both cases every exercise before `phase.index` is done.
   showExercise(phase.index, phase.type);
+  if (switchSides) els.hint.textContent = "Switch sides now!";
   markPlan(phase.index, state === "idle" ? -1 : phase.index);
 
   els.phaseTime.textContent = formatTime(phase.seconds - intoPhase);
@@ -300,6 +318,7 @@ function start() {
   if (state === "finished") reset();
   unlockAudio(els.bowl);
   unlockAudio(els.march);
+  unlockAudio(els.bing);
   state = "running";
   runStartedAt = Date.now();
   tickHandle = setInterval(render, 200);
@@ -326,6 +345,7 @@ function reset() {
   state = "idle";
   elapsedBefore = 0;
   lastPhaseIndex = -1;
+  bingPhaseIndex = -1;
   stopBowl();
   stopWhistle();
   stopMarch();

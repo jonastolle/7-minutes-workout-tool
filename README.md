@@ -6,6 +6,7 @@ A small web page that runs the standard 7 minute workout: 12 exercises of
 - Shows the current exercise with a picture and a short form hint
 - Separate countdowns for the current exercise/rest and the whole workout
 - A referee whistle when each exercise starts, a short Tibetan singing bowl when it ends
+- A short bing at 15 seconds in the side plank, the signal to switch sides
 - A short marching band fanfare and confetti when the workout is done
 - Plan list on the side that ticks off each finished exercise
 - Start, Pause/Resume and Stop buttons
@@ -37,6 +38,10 @@ United States Marine Band (2017),
 [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Sousa%27s_%22The_Stars_and_Stripes_Forever%22_-_United_States_Marine_Band_(2017).mp3),
 public domain (work of the US federal government). `sounds/march.m4a` is the
 first 13 seconds of that recording with a fade-out added.
+
+Switch-sides bing: first tone of "Airplane Chime Sound Effect" by Sharelk,
+[Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Airplane_Chime_Sound_Effect.ogg),
+public domain (CC0). `sounds/bing.m4a` is that tone cut out with a short fade-out.
 
 Created by [Jonas Tölle](https://github.com/jonastolle).
 
