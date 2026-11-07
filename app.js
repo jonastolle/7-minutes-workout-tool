@@ -7,7 +7,7 @@ const EXERCISES = [
   { name: "Jumping jacks", image: "01-jumping-jacks.svg", hint: "Arms up, legs out, keep a steady rhythm" },
   { name: "Wall sit", image: "02-wall-sit.svg", hint: "Back against the wall, knees at 90°" },
   { name: "Push-ups", image: "03-push-up.svg", hint: "Body straight, chest towards the floor" },
-  { name: "Abdominal crunches", image: "04-abdominal-crunch.svg", hint: "Lift your shoulders, keep your lower back down" },
+  { name: "Abdominal crunches", image: "04-abdominal-crunch.svg", hint: "Reach for your knees, lift only your shoulder blades" },
   { name: "Step-ups onto a chair", image: "05-step-up.svg", hint: "Alternate legs, stand fully upright on top" },
   { name: "Squats", image: "06-squat.svg", hint: "Hips back, weight on your heels" },
   { name: "Triceps dips on a chair", image: "07-triceps-dip.svg", hint: "Elbows point back, lower slowly" },
