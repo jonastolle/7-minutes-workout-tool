@@ -13,9 +13,9 @@ const EXERCISES = [
   { name: "Triceps dips on a chair", image: "07-triceps-dip.svg", hint: "Elbows point back, lower slowly" },
   { name: "Plank", image: "08-plank.svg", hint: "Forearms down, body in one straight line" },
   { name: "High knees, running in place", image: "09-high-knees.svg", hint: "Knees up to hip height, pump your arms" },
-  { name: "Lunges", image: "10-lunge.svg", hint: "Alternate legs, front knee over the ankle" },
+  { name: "Lunges", image: "10-lunge.svg", hint: "Front knee over the ankle, switch legs at the bing", switchAtHalf: "Switch legs now!" },
   { name: "Push-ups with rotation", image: "11-push-up-rotation.svg", hint: "After each push-up, rotate and reach to the sky" },
-  { name: "Side plank", image: "12-side-plank.svg", hint: "Switch sides at the bing", switchAtHalf: true },
+  { name: "Side plank", image: "12-side-plank.svg", hint: "Switch sides at the bing", switchAtHalf: "Switch sides now!" },
 ];
 
 // Build the timeline: work, rest, work, rest, ..., work.
@@ -126,9 +126,19 @@ function stopWhistle() {
   els.whistle.pause();
 }
 
-// A short bing at the halfway mark of exercises done on both sides
-// (marked `switchAtHalf`), telling you to switch sides.
-let bingPhaseIndex = -1; // phase whose halfway bing has already played
+// A short bing at the halfway mark of exercises done one side at a time.
+// `switchAtHalf` holds the hint shown from the bing onwards. The bing is
+// scheduled for the exact halfway moment rather than the next timer tick.
+const TICK_MS = 200;
+let bingPhaseIndex = -1; // phase whose halfway bing is scheduled or played
+let bingTimeout = null;
+
+function cancelPendingBing() {
+  if (bingTimeout === null) return;
+  clearTimeout(bingTimeout);
+  bingTimeout = null;
+  bingPhaseIndex = -1;
+}
 
 function playBing() {
   els.bing.currentTime = 0;
@@ -277,17 +287,21 @@ function render() {
   }
 
   const phase = PHASES[phaseIndex];
-  const switchSides = phase.type === "work" && EXERCISES[phase.index].switchAtHalf
-    && state !== "idle" && intoPhase >= phase.seconds / 2;
-  if (switchSides && state === "running" && bingPhaseIndex !== phaseIndex) {
+  const switchHint = phase.type === "work" ? EXERCISES[phase.index].switchAtHalf : null;
+  const msToHalf = (phase.seconds / 2 - intoPhase) * 1000;
+  if (switchHint && state === "running" && bingPhaseIndex !== phaseIndex && msToHalf <= TICK_MS) {
     bingPhaseIndex = phaseIndex;
-    playBing();
+    bingTimeout = setTimeout(() => {
+      bingTimeout = null;
+      playBing();
+      render();
+    }, Math.max(0, msToHalf));
   }
 
   // A rest phase carries the index of the exercise that follows it,
   // so in both cases every exercise before `phase.index` is done.
   showExercise(phase.index, phase.type);
-  if (switchSides) els.hint.textContent = "Switch sides now!";
+  if (switchHint && state !== "idle" && msToHalf <= 0) els.hint.textContent = switchHint;
   markPlan(phase.index, state === "idle" ? -1 : phase.index);
 
   els.phaseTime.textContent = formatTime(phase.seconds - intoPhase);
@@ -321,7 +335,7 @@ function start() {
   unlockAudio(els.bing);
   state = "running";
   runStartedAt = Date.now();
-  tickHandle = setInterval(render, 200);
+  tickHandle = setInterval(render, TICK_MS);
   setButtons();
   render();
 }
@@ -331,10 +345,11 @@ function togglePause() {
     elapsedBefore = elapsedMs();
     state = "paused";
     clearInterval(tickHandle);
+    cancelPendingBing();
   } else if (state === "paused") {
     state = "running";
     runStartedAt = Date.now();
-    tickHandle = setInterval(render, 200);
+    tickHandle = setInterval(render, TICK_MS);
   }
   setButtons();
   render();
@@ -345,6 +360,7 @@ function reset() {
   state = "idle";
   elapsedBefore = 0;
   lastPhaseIndex = -1;
+  cancelPendingBing();
   bingPhaseIndex = -1;
   stopBowl();
   stopWhistle();
