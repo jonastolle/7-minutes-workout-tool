@@ -2,6 +2,9 @@
 // 12 exercises, 30 s each, 10 s rest between them.
 const WORK_SECONDS = 30;
 const REST_SECONDS = 10;
+// Exercises done one side at a time (marked with `side`) get a short
+// break at the halfway mark to change position.
+const SWITCH_SECONDS = 3;
 
 const EXERCISES = [
   { name: "Jumping jacks", image: "01-jumping-jacks.svg", hint: "Arms up, legs out, keep a steady rhythm" },
@@ -13,15 +16,23 @@ const EXERCISES = [
   { name: "Triceps dips on a chair", image: "07-triceps-dip.svg", hint: "Elbows point back, lower slowly" },
   { name: "Plank", image: "08-plank.svg", hint: "Forearms down, body in one straight line" },
   { name: "High knees, running in place", image: "09-high-knees.svg", hint: "Knees up to hip height, pump your arms" },
-  { name: "Lunges", image: "10-lunge.svg", hint: "Front knee over the ankle, switch legs at the bing", switchAtHalf: "Switch legs now!" },
+  { name: "Lunges", image: "10-lunge.svg", hint: "Front knee over the ankle, back knee towards the floor", side: "leg" },
   { name: "Push-ups with rotation", image: "11-push-up-rotation.svg", hint: "After each push-up, rotate and reach to the sky" },
-  { name: "Side plank", image: "12-side-plank.svg", hint: "Switch sides at the bing", switchAtHalf: "Switch sides now!" },
+  { name: "Side plank", image: "12-side-plank.svg", hint: "Hips up, body in one straight line", side: "side" },
 ];
 
-// Build the timeline: work, rest, work, rest, ..., work.
+// Build the timeline: work, rest, work, rest, ..., work. A one-sided
+// exercise becomes first side, switch break, second side.
 const PHASES = [];
 EXERCISES.forEach((exercise, i) => {
-  PHASES.push({ type: "work", index: i, seconds: WORK_SECONDS });
+  if (exercise.side) {
+    const half = WORK_SECONDS / 2;
+    PHASES.push({ type: "work", index: i, seconds: half, part: 1 });
+    PHASES.push({ type: "switch", index: i, seconds: SWITCH_SECONDS });
+    PHASES.push({ type: "work", index: i, seconds: half, part: 2 });
+  } else {
+    PHASES.push({ type: "work", index: i, seconds: WORK_SECONDS });
+  }
   if (i < EXERCISES.length - 1) {
     PHASES.push({ type: "rest", index: i + 1, seconds: REST_SECONDS });
   }
@@ -126,20 +137,25 @@ function stopWhistle() {
   els.whistle.pause();
 }
 
-// A short bing at the halfway mark of exercises done one side at a time.
-// `switchAtHalf` holds the hint shown from the bing onwards. The bing is
-// scheduled for the exact halfway moment rather than the next timer tick.
+// The display updates every tick. Phase changes, and the sounds that go
+// with them, are scheduled for their exact moment instead.
 const TICK_MS = 200;
-let bingPhaseIndex = -1; // phase whose halfway bing is scheduled or played
-let bingTimeout = null;
+let boundaryTimeout = null;
 
-function cancelPendingBing() {
-  if (bingTimeout === null) return;
-  clearTimeout(bingTimeout);
-  bingTimeout = null;
-  bingPhaseIndex = -1;
+function scheduleBoundary(msToPhaseEnd) {
+  if (state !== "running" || boundaryTimeout !== null || msToPhaseEnd > TICK_MS) return;
+  boundaryTimeout = setTimeout(() => {
+    boundaryTimeout = null;
+    render();
+  }, Math.max(0, msToPhaseEnd));
 }
 
+function cancelBoundary() {
+  clearTimeout(boundaryTimeout);
+  boundaryTimeout = null;
+}
+
+// A short bing starts the switch break of one-sided exercises.
 function playBing() {
   els.bing.currentTime = 0;
   els.bing.play().catch(() => {});
@@ -243,15 +259,23 @@ function unlockAudio(audio) {
     .catch(() => { audio.muted = false; });
 }
 
-function showExercise(index, type) {
-  const exercise = EXERCISES[index];
+function showExercise(phase) {
+  const exercise = EXERCISES[phase.index];
+  const position = `${phase.index + 1} of ${EXERCISES.length}`;
   els.image.src = `images/${exercise.image}`;
   els.image.alt = exercise.name;
   els.name.textContent = exercise.name;
   els.hint.textContent = exercise.hint;
-  els.step.textContent = type === "rest"
-    ? `Up next: exercise ${index + 1} of ${EXERCISES.length}`
-    : `Exercise ${index + 1} of ${EXERCISES.length}`;
+  if (phase.type === "rest") {
+    els.step.textContent = `Up next: exercise ${position}`;
+  } else if (phase.type === "switch") {
+    els.step.textContent = `Exercise ${position}`;
+    els.hint.textContent = `Switch ${exercise.side}s now!`;
+  } else if (phase.part) {
+    els.step.textContent = `Exercise ${position} · ${phase.part === 1 ? "first" : "second"} ${exercise.side}`;
+  } else {
+    els.step.textContent = `Exercise ${position}`;
+  }
 }
 
 function markPlan(doneCount, currentIndex) {
@@ -265,16 +289,18 @@ function render() {
   const elapsed = elapsedMs() / 1000;
   const { phaseIndex, intoPhase } = locate(elapsed);
 
-  // Ring the bowl each time an exercise phase ends, including any
-  // that were skipped over while the tab was in the background.
+  // Ring the bowl each time an exercise ends (a first side running into
+  // its switch break doesn't count), including any that were skipped
+  // over while the tab was in the background.
   if (state === "running" && phaseIndex > lastPhaseIndex) {
     for (let i = Math.max(lastPhaseIndex, 0); i < phaseIndex; i++) {
-      if (PHASES[i].type !== "work") continue;
+      if (PHASES[i].type !== "work" || PHASES[i + 1]?.type === "switch") continue;
       if (phaseIndex >= PHASES.length) ringBowl(FINAL_BOWL_HOLD_MS, FINAL_BOWL_FADE_MS);
       else ringBowl();
       break;
     }
     if (PHASES[phaseIndex]?.type === "work") blowWhistle();
+    if (PHASES[phaseIndex]?.type === "switch") playBing();
   }
   if (state === "running") lastPhaseIndex = phaseIndex;
 
@@ -287,27 +313,18 @@ function render() {
   }
 
   const phase = PHASES[phaseIndex];
-  const switchHint = phase.type === "work" ? EXERCISES[phase.index].switchAtHalf : null;
-  const msToHalf = (phase.seconds / 2 - intoPhase) * 1000;
-  if (switchHint && state === "running" && bingPhaseIndex !== phaseIndex && msToHalf <= TICK_MS) {
-    bingPhaseIndex = phaseIndex;
-    bingTimeout = setTimeout(() => {
-      bingTimeout = null;
-      playBing();
-      render();
-    }, Math.max(0, msToHalf));
-  }
+  scheduleBoundary((phase.seconds - intoPhase) * 1000);
 
-  // A rest phase carries the index of the exercise that follows it,
-  // so in both cases every exercise before `phase.index` is done.
-  showExercise(phase.index, phase.type);
-  if (switchHint && state !== "idle" && msToHalf <= 0) els.hint.textContent = switchHint;
+  // Rest and switch phases carry the index of the exercise they belong
+  // to, so in every case each exercise before `phase.index` is done.
+  showExercise(phase);
   markPlan(phase.index, state === "idle" ? -1 : phase.index);
 
+  const label = { work: "Exercise", rest: "Rest", switch: "Switch" }[phase.type];
   els.phaseTime.textContent = formatTime(phase.seconds - intoPhase);
   els.phaseBar.style.width = `${(intoPhase / phase.seconds) * 100}%`;
-  els.phaseBar.classList.toggle("rest", phase.type === "rest");
-  els.phaseTimerLabel.textContent = phase.type === "rest" ? "Rest" : "Exercise";
+  els.phaseBar.classList.toggle("rest", phase.type !== "work");
+  els.phaseTimerLabel.textContent = label;
 
   els.phaseLabel.className = "phase-label";
   if (state === "idle") {
@@ -315,8 +332,8 @@ function render() {
   } else if (state === "paused") {
     els.phaseLabel.textContent = "Paused";
   } else {
-    els.phaseLabel.textContent = phase.type === "rest" ? "Rest" : "Go!";
-    els.phaseLabel.classList.add(phase.type);
+    els.phaseLabel.textContent = phase.type === "work" ? "Go!" : label;
+    els.phaseLabel.classList.add(phase.type === "work" ? "work" : "rest");
   }
 }
 
@@ -345,7 +362,7 @@ function togglePause() {
     elapsedBefore = elapsedMs();
     state = "paused";
     clearInterval(tickHandle);
-    cancelPendingBing();
+    cancelBoundary();
   } else if (state === "paused") {
     state = "running";
     runStartedAt = Date.now();
@@ -360,8 +377,7 @@ function reset() {
   state = "idle";
   elapsedBefore = 0;
   lastPhaseIndex = -1;
-  cancelPendingBing();
-  bingPhaseIndex = -1;
+  cancelBoundary();
   stopBowl();
   stopWhistle();
   stopMarch();

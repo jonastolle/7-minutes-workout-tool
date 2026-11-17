@@ -1,12 +1,14 @@
 # 7 minutes workout tool
 
 A small web page that runs the standard 7 minute workout: 12 exercises of
-30 seconds each, with 10 seconds of rest between them (7:50 in total).
+30 seconds each, with 10 seconds of rest between them. The lunges and the side
+plank get a 3-second break at the halfway mark to switch legs or sides
+(7:56 in total).
 
 - Shows the current exercise with a picture and a short form hint
 - Separate countdowns for the current exercise/rest and the whole workout
 - A referee whistle when each exercise starts, a short Tibetan singing bowl when it ends
-- A short bing at 15 seconds in the lunges and the side plank, the signal to switch legs or sides
+- A short bing at 15 seconds in the lunges and the side plank, starting a 3-second break to switch legs or sides
 - A short marching band fanfare and confetti when the workout is done
 - Plan list on the side that ticks off each finished exercise
 - Start, Pause/Resume and Stop buttons
