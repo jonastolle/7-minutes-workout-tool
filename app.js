@@ -99,6 +99,86 @@ function locate(elapsedSeconds) {
   return { phaseIndex: PHASES.length, intoPhase: 0 };
 }
 
+// Sounds play through the Web Audio API: each file is decoded once and
+// a single audio stream stays open for the whole workout, so every cue
+// starts at once. Safari tends to clip or drop short sounds played
+// through <audio> elements. Where Web Audio isn't available, or the
+// files can't be fetched (the page opened from disk), the <audio>
+// elements in the page are used instead.
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+const audioCtx = AudioCtx ? new AudioCtx() : null;
+const buffers = {}; // sound name -> decoded AudioBuffer
+const playing = {}; // sound name -> function that stops it
+
+// On iPhones, play through the silent switch like the <audio> elements do.
+if (navigator.audioSession) navigator.audioSession.type = "playback";
+
+async function loadSound(name) {
+  try {
+    const response = await fetch(els[name].src);
+    buffers[name] = await audioCtx.decodeAudioData(await response.arrayBuffer());
+  } catch {
+    // keep using the <audio> element for this sound
+  }
+}
+if (audioCtx) ["whistle", "bing", "bowl", "march"].forEach(loadSound);
+
+// Browsers only start audio from a click, so this runs on Start and Resume.
+function resumeAudio() {
+  if (audioCtx && audioCtx.state !== "running") audioCtx.resume().catch(() => {});
+}
+
+function stopSound(name) {
+  playing[name]?.();
+  delete playing[name];
+}
+
+// Plays a sound from the start. With `fadeMs`, it stays at full volume
+// for `holdMs`, then fades out over `fadeMs` and stops.
+function playSound(name, holdMs = 0, fadeMs = 0) {
+  stopSound(name);
+
+  if (audioCtx && audioCtx.state === "running" && buffers[name]) {
+    const source = audioCtx.createBufferSource();
+    const gain = audioCtx.createGain();
+    source.buffer = buffers[name];
+    source.connect(gain);
+    gain.connect(audioCtx.destination);
+    const now = audioCtx.currentTime;
+    source.start(now);
+    if (fadeMs) {
+      const fadeStart = now + holdMs / 1000;
+      const end = fadeStart + fadeMs / 1000;
+      gain.gain.setValueAtTime(1, fadeStart);
+      gain.gain.linearRampToValueAtTime(0, end);
+      source.stop(end);
+    }
+    playing[name] = () => {
+      try { source.stop(); } catch { /* already stopped */ }
+    };
+    return;
+  }
+
+  const el = els[name];
+  el.volume = 1;
+  el.currentTime = 0;
+  el.play().catch(() => {});
+  let fadeHandle = null;
+  if (fadeMs) {
+    const startedAt = Date.now();
+    fadeHandle = setInterval(() => {
+      const fade = (Date.now() - startedAt - holdMs) / fadeMs;
+      if (fade >= 1) stopSound(name);
+      else if (fade > 0) el.volume = 1 - fade;
+    }, 50);
+  }
+  playing[name] = () => {
+    clearInterval(fadeHandle);
+    el.pause();
+    el.volume = 1;
+  };
+}
+
 // The recording rings for over 20 s; let it ring through most of the
 // 10 s rest and fade it out just before the next exercise starts.
 const BOWL_HOLD_MS = 3000;
@@ -106,35 +186,23 @@ const BOWL_FADE_MS = 6000;
 // After the last exercise the bowl is kept short, then the march plays.
 const FINAL_BOWL_HOLD_MS = 1500;
 const FINAL_BOWL_FADE_MS = 1500;
-let bowlFadeHandle = null;
-
-function stopBowl() {
-  clearInterval(bowlFadeHandle);
-  els.bowl.pause();
-  els.bowl.volume = 1;
-}
 
 function ringBowl(holdMs = BOWL_HOLD_MS, fadeMs = BOWL_FADE_MS) {
-  stopBowl();
-  els.bowl.currentTime = 0;
-  els.bowl.play().catch(() => {});
-  const startedAt = Date.now();
-  bowlFadeHandle = setInterval(() => {
-    const fade = (Date.now() - startedAt - holdMs) / fadeMs;
-    if (fade >= 1) stopBowl();
-    else if (fade > 0) els.bowl.volume = 1 - fade;
-  }, 50);
+  playSound("bowl", holdMs, fadeMs);
+}
+
+function stopBowl() {
+  stopSound("bowl");
 }
 
 // A referee whistle marks the start of each exercise. On the first
 // exercise it plays inside the Start click, which unlocks the sound.
 function blowWhistle() {
-  els.whistle.currentTime = 0;
-  els.whistle.play().catch(() => {});
+  playSound("whistle");
 }
 
 function stopWhistle() {
-  els.whistle.pause();
+  stopSound("whistle");
 }
 
 // The display updates every tick. Phase changes, and the sounds that go
@@ -157,8 +225,7 @@ function cancelBoundary() {
 
 // A short bing starts the switch break of one-sided exercises.
 function playBing() {
-  els.bing.currentTime = 0;
-  els.bing.play().catch(() => {});
+  playSound("bing");
 }
 
 // A short march celebrates the finished workout once the last bowl
@@ -167,15 +234,12 @@ let marchTimeout = null;
 
 function playMarchAfterBowl() {
   stopMarch();
-  marchTimeout = setTimeout(() => {
-    els.march.currentTime = 0;
-    els.march.play().catch(() => {});
-  }, FINAL_BOWL_HOLD_MS + FINAL_BOWL_FADE_MS);
+  marchTimeout = setTimeout(() => playSound("march"), FINAL_BOWL_HOLD_MS + FINAL_BOWL_FADE_MS);
 }
 
 function stopMarch() {
   clearTimeout(marchTimeout);
-  els.march.pause();
+  stopSound("march");
 }
 
 // Confetti rain for the "Well done!" screen.
@@ -269,9 +333,13 @@ function allowScreenOff() {
   wakeLock = null;
 }
 
-// The browser drops the lock when the page is hidden; take it back.
+// The browser drops the lock, and may pause the audio stream, when the
+// page is hidden; take both back.
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible" && state === "running") keepScreenOn();
+  if (document.visibilityState === "visible" && state === "running") {
+    keepScreenOn();
+    resumeAudio();
+  }
 });
 
 // Browsers only allow audio that was first started from a click,
@@ -371,6 +439,7 @@ function setButtons() {
 
 function start() {
   if (state === "finished") reset();
+  resumeAudio();
   unlockAudio(els.bowl);
   unlockAudio(els.march);
   unlockAudio(els.bing);
@@ -394,6 +463,7 @@ function togglePause() {
     runStartedAt = Date.now();
     tickHandle = setInterval(render, TICK_MS);
     keepScreenOn();
+    resumeAudio();
   }
   setButtons();
   render();
