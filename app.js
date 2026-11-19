@@ -250,6 +250,30 @@ function stopConfetti() {
   confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
 }
 
+// Keep the screen on while the workout runs. A phone that locks its
+// screen pauses the page, and the sound cues would stop or come late.
+let wakeLock = null;
+
+async function keepScreenOn() {
+  if (!("wakeLock" in navigator) || wakeLock) return;
+  try {
+    wakeLock = await navigator.wakeLock.request("screen");
+    wakeLock.addEventListener("release", () => { wakeLock = null; });
+  } catch {
+    wakeLock = null; // not allowed here, e.g. low battery mode
+  }
+}
+
+function allowScreenOff() {
+  wakeLock?.release().catch(() => {});
+  wakeLock = null;
+}
+
+// The browser drops the lock when the page is hidden; take it back.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && state === "running") keepScreenOn();
+});
+
 // Browsers only allow audio that was first started from a click,
 // so play each sound silently once when Start is pressed.
 function unlockAudio(audio) {
@@ -353,6 +377,7 @@ function start() {
   state = "running";
   runStartedAt = Date.now();
   tickHandle = setInterval(render, TICK_MS);
+  keepScreenOn();
   setButtons();
   render();
 }
@@ -363,10 +388,12 @@ function togglePause() {
     state = "paused";
     clearInterval(tickHandle);
     cancelBoundary();
+    allowScreenOff();
   } else if (state === "paused") {
     state = "running";
     runStartedAt = Date.now();
     tickHandle = setInterval(render, TICK_MS);
+    keepScreenOn();
   }
   setButtons();
   render();
@@ -378,6 +405,7 @@ function reset() {
   elapsedBefore = 0;
   lastPhaseIndex = -1;
   cancelBoundary();
+  allowScreenOff();
   stopBowl();
   stopWhistle();
   stopMarch();
@@ -403,6 +431,7 @@ function finish() {
   setButtons();
   startConfetti();
   playMarchAfterBowl();
+  allowScreenOff();
 }
 
 els.start.addEventListener("click", start);
